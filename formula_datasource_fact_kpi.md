@@ -55,9 +55,9 @@ This document outlines various Key Performance Indicators (KPIs) related to coop
 ---
 
 ### KPI_06: Rasio Koperasi Baru vs Total
-**Description:** Persentase koperasi dengan registration_type = 'Baru' terhadap total.
+**Description:** Persentase koperasi dengan registration_type = 'Pendaftaran Baru' terhadap total.
 **Category:** Koperasi
-**Logical Formula:** `(COUNT(registration_type='Baru')/COUNT(all))*100`
+**Logical Formula:** `(COUNT(registration_type='Pendaftaran Baru')/COUNT(all))*100`
 **SQL Formula:** `COUNT(*) FILTER (WHERE registration_type='Pendaftaran Baru')*100.0/COUNT(*)`
 **Source Tables:** `cooperative`
 **Source Fields:** `registration_type`
@@ -95,10 +95,10 @@ This document outlines various Key Performance Indicators (KPIs) related to coop
 ---
 
 ### KPI_10: Rasio Gender Anggota (L/P)
-**Description:** Proporsi anggota laki-laki vs perempuan.
+**Description:** Proporsi anggota perempuan (percentage).
 **Category:** Keanggotaan
-**Logical Formula:** `COUNT(L)/COUNT(all), COUNT(P)/COUNT(all)`
-**SQL Formula:** `COUNT(*) FILTER (WHERE gender='LAKI-LAKI')/COUNT(*)`
+**Logical Formula:** `COUNT(gender='PEREMPUAN')/COUNT(all)*100`
+**SQL Formula:** `COUNT(*) FILTER (WHERE gender='PEREMPUAN')*100.0/COUNT(*)`
 **Source Tables:** `cooperative_members`
 **Source Fields:** `gender`
 
@@ -137,10 +137,10 @@ This document outlines various Key Performance Indicators (KPIs) related to coop
 ### KPI_14: Total Pengurus Koperasi
 **Description:** Jumlah pengurus (board/management) koperasi.
 **Category:** Tata Kelola
-**Logical Formula:** `COUNT(role='Pengurus')`
-**SQL Formula:** `COUNT(*) FILTER (WHERE status='Pengurus')`
+**Logical Formula:** `COUNT(role IN ('Ketua', 'Sekretaris', 'Bendahara'))`
+**SQL Formula:** `COUNT(*) FILTER (WHERE role IN ('Ketua', 'Sekretaris', 'Bendahara'))`
 **Source Tables:** `cooperative_management`
-**Source Fields:** `status`
+**Source Fields:** `role` (NOT `status`)
 
 ---
 
@@ -148,27 +148,27 @@ This document outlines various Key Performance Indicators (KPIs) related to coop
 **Description:** Jumlah pengawas koperasi.
 **Category:** Tata Kelola
 **Logical Formula:** `COUNT(role='Pengawas')`
-**SQL Formula:** `COUNT(*) FILTER (WHERE status='Pengawas')`
+**SQL Formula:** `COUNT(*) FILTER (WHERE role='Pengawas')`
 **Source Tables:** `cooperative_management`
-**Source Fields:** `status`
+**Source Fields:** `role` (NOT `status`)
 
 ---
 
 ### KPI_16: Rasio Gender Pengurus
-**Description:** Proporsi pengurus laki-laki vs perempuan.
+**Description:** Proporsi pengurus perempuan (percentage).
 **Category:** Tata Kelola
-**Logical Formula:** `COUNT(role='Pengurus' AND gender='L')/COUNT(role='Pengurus')`
-**SQL Formula:** `COUNT(*) FILTER (WHERE status='Pengurus' AND gender='LAKI-LAKI')*1.0/COUNT(*) FILTER (WHERE status='Pengurus')`
+**Logical Formula:** `COUNT(role IN ('Ketua','Sekretaris','Bendahara') AND gender='Perempuan')/COUNT(role IN ('Ketua','Sekretaris','Bendahara'))`
+**SQL Formula:** `COUNT(*) FILTER (WHERE role IN ('Ketua','Sekretaris','Bendahara') AND gender='Perempuan')*100.0/COUNT(*) FILTER (WHERE role IN ('Ketua','Sekretaris','Bendahara'))`
 **Source Tables:** `cooperative_management`
-**Source Fields:** `gender, status`
+**Source Fields:** `gender, role` (NOT `status`)
 
 ---
 
 ### KPI_17: Struktur Jabatan Lengkap
 **Description:** Persentase koperasi yang memiliki minimal Ketua, Sekretaris, Bendahara.
 **Category:** Tata Kelola
-**Logical Formula:** `COUNT(coop with 3 roles)/COUNT(coop)`
-**SQL Formula:** `(Aggregated via HAVING COUNT DISTINCT roles)`
+**Logical Formula:** `COUNT(DISTINCT cooperativeId WHERE has role='Ketua' AND 'Sekretaris' AND 'Bendahara')/COUNT(DISTINCT cooperativeId)`
+**SQL Formula:** `COUNT(DISTINCT cooperativeId WHERE has all 3 roles)*100.0/COUNT(DISTINCT cooperativeId)`
 **Source Tables:** `cooperative_management`
 **Source Fields:** `role, cooperativeId`
 
@@ -337,8 +337,8 @@ This document outlines various Key Performance Indicators (KPIs) related to coop
 ### KPI_36: In-Progress Partnership Rate
 **Description:** Persentase aplikasi kemitraan yang masih dalam proses.
 **Category:** Kemitraan
-**Logical Formula:** `COUNT(status IN ('Requested','InReview'))/COUNT(all)`
-**SQL Formula:** `COUNT(*) FILTER (WHERE status IN ('Requested','InReview'))/COUNT(*)`
+**Logical Formula:** `COUNT(status IN ('Requested','InReview','In Progress'))/COUNT(all)*100`
+**SQL Formula:** `COUNT(*) FILTER (WHERE status IN ('Requested','InReview','In Progress'))*100.0/COUNT(*)`
 **Source Tables:** `business_partnership_applications`
 **Source Fields:** `status`
 
@@ -355,10 +355,10 @@ This document outlines various Key Performance Indicators (KPIs) related to coop
 ---
 
 ### KPI_38: Partnership Growth Rate
-**Description:** Pertumbuhan jumlah kemitraan verified dibanding minggu sebelumnya.
+**Description:** Rata-rata pertumbuhan jumlah kemitraan verified per bulan (month-over-month growth rate).
 **Category:** Kemitraan
-**Logical Formula:** `(verified_week-verified_prev_week)/verified_prev_week`
-**SQL Formula:** `Based on weekly aggregates`
+**Logical Formula:** `AVG(month-over-month growth rate) WHERE status='Verified'` (calculated from trend, capped 0-100)
+**SQL Formula:** `AVG((curr_month - prev_month) / prev_month * 100) WHERE status='Verified'` (capped 0-100)
 **Source Tables:** `business_partnership_applications`
 **Source Fields:** `status, created_at`
 
@@ -374,4 +374,140 @@ This document outlines various Key Performance Indicators (KPIs) related to coop
 
 ---
 
-### KPI_41: Total UPK
+### KPI_41: Total UPKDK Aktif
+**Description:** Jumlah UPKDK (Unit Pelayanan Koperasi Desa/Kelurahan) aktif.
+**Category:** Infrastruktur
+**Logical Formula:** `COUNT(upkdk_id) WHERE villageId = village_id`
+**SQL Formula:** `COUNT(DISTINCT upkdk_id) WHERE villageId = village_id`
+**Source Tables:** `upkdk`
+**Source Fields:** `upkdk_id, villageId`
+
+---
+
+### KPI_42: Proporsi Jenis UPKDK
+**Description:** Persentase jenis UPKDK yang paling banyak.
+**Category:** Infrastruktur
+**Logical Formula:** `(MAX(COUNT(type)) / total_upkdk) * 100`
+**SQL Formula:** `(MAX(COUNT(type)) * 100.0 / COUNT(*))`
+**Source Tables:** `upkdk`
+**Source Fields:** `type`
+
+---
+
+### KPI_43: UPKDK dengan Akses Internet
+**Description:** Persentase UPKDK yang memiliki akses internet.
+**Category:** Infrastruktur
+**Logical Formula:** `(COUNT(internet_access='Ada') / total_upkdk) * 100`
+**SQL Formula:** `COUNT(*) FILTER (WHERE internet_access='Ada')*100.0/COUNT(*)`
+**Source Tables:** `upkdk`
+**Source Fields:** `internet_access`
+
+---
+
+### KPI_44: Kondisi Bangunan UPKDK Layak
+**Description:** Persentase UPKDK dengan kondisi bangunan baik/layak.
+**Category:** Infrastruktur
+**Logical Formula:** `(COUNT(building_condition='Baik') / total_upkdk) * 100`
+**SQL Formula:** `COUNT(*) FILTER (WHERE building_condition='Baik')*100.0/COUNT(*)`
+**Source Tables:** `upkdk`
+**Source Fields:** `building_condition`
+
+---
+
+### KPI_45: Total Domain Koperasi Terdaftar
+**Description:** Total domain koperasi yang terdaftar (global).
+**Category:** Digital
+**Logical Formula:** `COUNT(*)` (global, semua domain)
+**SQL Formula:** `COUNT(*)`
+**Source Tables:** `domains`
+**Source Fields:** `domain_id`
+
+---
+
+### KPI_46: Domain Koperasi Terverifikasi
+**Description:** Persentase domain koperasi yang sudah terverifikasi.
+**Category:** Digital
+**Logical Formula:** `(COUNT(verification_status='Verified') / total_domain) * 100`
+**SQL Formula:** `COUNT(*) FILTER (WHERE verification_status='Verified')*100.0/COUNT(*)`
+**Source Tables:** `domains`
+**Source Fields:** `verification_status`
+
+---
+
+### KPI_47: Koperasi per Desa
+**Description:** Rata-rata jumlah koperasi per desa dalam satu kecamatan (capped 1-3).
+**Category:** Geografi
+**Logical Formula:** `AVG(total_koperasi_per_village) WHERE subdistrictId = subdistrict_id` (capped 1-3)
+**SQL Formula:** `AVG(COUNT(DISTINCT cooperative_id) GROUP BY villageId) WHERE subdistrictId = subdistrict_id` (capped 1-3)
+**Source Tables:** `cooperative`
+**Source Fields:** `cooperative_id, villageId, subdistrictId`
+
+---
+
+### KPI_48: Jumlah Penggabungan Desa
+**Description:** Jumlah penggabungan desa yang terjadi.
+**Category:** Geografi
+**Logical Formula:** `COUNT(*) WHERE village_id = village_id`
+**SQL Formula:** `COUNT(*) WHERE village_id = village_id`
+**Source Tables:** `cooperative_village_mergers`
+**Source Fields:** `village_id`
+
+---
+
+### KPI_49: GeoSpatial Data Completeness Score
+**Description:** Skor kelengkapan data geospatial (longitude, latitude, address) dari koperasi dan UPKDK.
+**Category:** Geografi
+**Logical Formula:** `(filled_points / total_points) * 100` (completeness: longitude, latitude, address dari cooperative & UPKDK)
+**SQL Formula:** `(SUM(CASE WHEN longitude IS NOT NULL THEN 1 ELSE 0 END + CASE WHEN latitude IS NOT NULL THEN 1 ELSE 0 END + CASE WHEN address IS NOT NULL THEN 1 ELSE 0 END) * 100.0 / (COUNT(*) * 3))`
+**Source Tables:** `cooperative, upkdk`
+**Source Fields:** `longitude, latitude, address`
+
+---
+
+### KPI_50: (Reserved)
+**Description:** Reserved for future use.
+**Category:** -
+**Logical Formula:** -
+**SQL Formula:** -
+**Source Tables:** -
+**Source Fields:** -
+
+---
+
+### KPI_51: Persentase Gerai dengan Foto Terunggah
+**Description:** Persentase gerai koperasi yang sudah mengunggah foto (primary_image).
+**Category:** Outlets
+**Logical Formula:** `(COUNT(primary_image IS NOT NULL) / total_gerai) * 100`
+**SQL Formula:** `COUNT(*) FILTER (WHERE primary_image IS NOT NULL)*100.0/COUNT(*)`
+**Source Tables:** `cooperative_outlets`
+**Source Fields:** `primary_image`
+
+---
+
+### KPI_52: Distribusi Jenis Gerai Koperasi
+**Description:** Persentase jenis gerai koperasi yang paling banyak digunakan.
+**Category:** Outlets
+**Logical Formula:** `(MAX(COUNT(cooperative_type_id)) / total_gerai) * 100`
+**SQL Formula:** `(MAX(COUNT(cooperative_type_id)) * 100.0 / COUNT(*))`
+**Source Tables:** `cooperative_outlets`
+**Source Fields:** `cooperative_type_id`
+
+---
+
+### KPI_53: Rata-rata Waktu Proses Aplikasi Kemitraan
+**Description:** Rata-rata waktu proses aplikasi kemitraan dalam jam (capped 5-72 hours, minimum 5 jika > 0).
+**Category:** Kemitraan
+**Logical Formula:** `AVG((updated_at - created_at) IN HOURS)` (capped 5-72 hours, min 5 if > 0)
+**SQL Formula:** `AVG(LEAST(EXTRACT(EPOCH FROM (updated_at - created_at))/3600, 72))` (with min 5 if > 0)
+**Source Tables:** `business_partnership_applications`
+**Source Fields:** `created_at, updated_at`
+
+---
+
+### KPI_54: Persentase UPKDK dengan Akses Air Listrik Memadai
+**Description:** Persentase UPKDK yang memiliki akses air dan listrik yang memadai.
+**Category:** Infrastruktur
+**Logical Formula:** `(COUNT(water_electricity='Ya') / total_upkdk) * 100`
+**SQL Formula:** `COUNT(*) FILTER (WHERE water_electricity='Ya')*100.0/COUNT(*)`
+**Source Tables:** `upkdk`
+**Source Fields:** `water_electricity`

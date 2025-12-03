@@ -2,6 +2,10 @@
 
 This document provides a comprehensive overview of the `FACT_KPI` table, detailing each column's name, data type, unit of measurement, transaction type, and an example value where applicable.
 
+**Status**: ✅ All 56 columns (including KPI_51-54) are implemented in `generate_fact_kpi.py`
+
+**Output File**: `result/FACT_KPI.csv` or `result/FACT_KPI_V001.csv` (with auto-versioning)
+
 | Column Name                           | Data Type     | UOM        | Transaction Type | Example Value | Description                                                                 |
 | :------------------------------------ | :------------ | :--------- | :--------------- | :------------ | :-------------------------------------------------------------------------- |
 | `date_key`                            | `Integer`     |            |                  |               | Unique identifier for the date.                                             |
